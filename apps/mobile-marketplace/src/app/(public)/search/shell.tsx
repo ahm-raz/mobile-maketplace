@@ -2,16 +2,24 @@
 
 import Link from "next/link";
 
-import type { ListingRecord, ListingsPagination } from "@/lib/features/listings";
+import type {
+	CategoryOption,
+	ListingRecord,
+	ListingsPagination,
+} from "@/lib/features/listings";
 import type { ListingsSearchParams } from "@/lib/features/listings";
 import { toListingsApiQuery } from "@/lib/features/listings/search-query";
 import { ListingCard } from "@/components/listings/listing-card";
-import { FilterChips, type ActiveFilterChip } from "@/components/listings/filter-chips";
+import {
+	FilterChips,
+	type ActiveFilterChip,
+} from "@/components/listings/filter-chips";
 import { SearchFiltersSidebar } from "@/components/listings/search-filters-sidebar";
 import { buttonVariants } from "@/components/primitives/button";
 import { cn } from "@/lib/utils";
 
 type SearchShellProps = {
+	categories: CategoryOption[];
 	listings: ListingRecord[];
 	pagination: ListingsPagination;
 	params: ListingsSearchParams;
@@ -19,7 +27,11 @@ type SearchShellProps = {
 
 function buildChips(params: ListingsSearchParams): ActiveFilterChip[] {
 	const chips: ActiveFilterChip[] = [];
-	const base = { ...params, platform: params.platform ?? "mobile", page: 1 as number | undefined };
+	const base = {
+		...params,
+		platform: params.platform ?? "mobile",
+		page: 1 as number | undefined,
+	};
 
 	if (params.q) {
 		const next = { ...base, q: undefined };
@@ -53,31 +65,77 @@ function buildChips(params: ListingsSearchParams): ActiveFilterChip[] {
 			removeHref: `/search${toListingsApiQuery(next)}`,
 		});
 	}
+	if (params.condition) {
+		const next = { ...base, condition: undefined };
+		chips.push({
+			key: "condition",
+			label: `Condition: ${params.condition.replaceAll("_", " ")}`,
+			removeHref: `/search${toListingsApiQuery(next)}`,
+		});
+	}
+	if (params.sale_type) {
+		const next = { ...base, sale_type: undefined };
+		chips.push({
+			key: "sale_type",
+			label: `Sale: ${params.sale_type}`,
+			removeHref: `/search${toListingsApiQuery(next)}`,
+		});
+	}
+	if (params.is_negotiable) {
+		const next = { ...base, is_negotiable: undefined };
+		chips.push({
+			key: "is_negotiable",
+			label: "Negotiable",
+			removeHref: `/search${toListingsApiQuery(next)}`,
+		});
+	}
 	return chips;
 }
 
-export default function SearchShell({ listings, pagination, params }: SearchShellProps) {
+export default function SearchShell({
+	categories,
+	listings,
+	pagination,
+	params,
+}: SearchShellProps) {
 	const chips = buildChips(params);
 	const page = params.page ?? 1;
 	const prevPage = page > 1 ? page - 1 : null;
 	const nextPage = pagination.hasMore ? page + 1 : null;
 
 	const hrefBase = (p: number) =>
-		`/search${toListingsApiQuery({ ...params, platform: params.platform ?? "mobile", page: p })}`;
+		`/search${toListingsApiQuery({
+			...params,
+			platform: params.platform ?? "mobile",
+			page: p,
+		})}`;
 
 	return (
 		<div
 			container-id="search-shell"
 			className="flex flex-col gap-8 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-10"
 		>
-			<aside container-id="search-sidebar-desktop" className="hidden lg:sticky lg:top-24 lg:block">
-				<SearchFiltersSidebar initial={params} />
+			<aside
+				container-id="search-sidebar-desktop"
+				className="hidden lg:sticky lg:top-24 lg:block"
+			>
+				<SearchFiltersSidebar categories={categories} initial={params} />
 			</aside>
 
 			<div container-id="search-main" className="flex min-w-0 flex-col gap-6">
-				<header container-id="search-header" className="flex flex-col gap-3">
+				<header
+					container-id="search-header"
+					className="surface-panel flex flex-col gap-4 rounded-[1.8rem] border border-border/80 bg-card/80 p-5"
+				>
 					<div className="flex flex-wrap items-end justify-between gap-2">
-						<h1 className="text-3xl font-semibold tracking-tight">Search listings</h1>
+						<div>
+							<h1 className="text-3xl font-semibold tracking-tight">
+								Search listings
+							</h1>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Refine by location, category, condition, and sale type.
+							</p>
+						</div>
 						<p className="text-sm text-muted-foreground tabular-nums">
 							{pagination.total} result{pagination.total === 1 ? "" : "s"}
 						</p>
@@ -106,7 +164,10 @@ export default function SearchShell({ listings, pagination, params }: SearchShel
 					</div>
 				) : null}
 
-				<div container-id="search-pagination" className="flex flex-wrap items-center justify-end gap-2 pt-2">
+				<div
+					container-id="search-pagination"
+					className="flex flex-wrap items-center justify-end gap-2 pt-2"
+				>
 					{prevPage !== null ? (
 						<Link
 							href={hrefBase(prevPage)}
@@ -127,7 +188,7 @@ export default function SearchShell({ listings, pagination, params }: SearchShel
 			</div>
 
 			<div container-id="search-sidebar-mobile" className="lg:hidden">
-				<SearchFiltersSidebar initial={params} />
+				<SearchFiltersSidebar categories={categories} initial={params} />
 			</div>
 		</div>
 	);

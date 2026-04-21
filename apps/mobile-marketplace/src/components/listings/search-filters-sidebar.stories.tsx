@@ -1,17 +1,14 @@
 "use client";
 
-// =============================================================================
-// SearchFiltersSidebar — Storybook
-// =============================================================================
-
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { SearchFiltersSidebar } from "@/components/listings/search-filters-sidebar";
-import { mockSearchInitial } from "@/storybook/fixtures";
+import { mockCategories, mockSearchInitial } from "@/storybook/fixtures";
 
 const meta = {
 	component: SearchFiltersSidebar,
 	args: {
+		categories: mockCategories,
 		initial: mockSearchInitial,
 		basePath: "/search",
 	},
@@ -25,4 +22,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+	args: {},
+};

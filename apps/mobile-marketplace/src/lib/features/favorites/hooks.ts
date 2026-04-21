@@ -74,7 +74,7 @@ export function useToggleFavorite(listingId: string): ToggleState {
 			data: { session },
 		} = await supabase.auth.getSession();
 		if (!session?.access_token) {
-			router.push("/login");
+			router.push("/sign-in");
 			return;
 		}
 

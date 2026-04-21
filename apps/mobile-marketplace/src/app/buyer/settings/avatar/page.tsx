@@ -7,7 +7,7 @@ import AvatarSettingsShell from "./shell";
 export default async function BuyerAvatarSettingsPage() {
 	const profile = await fetchMyProfile();
 	if (!profile) {
-		redirect("/login");
+		redirect("/sign-in");
 	}
 
 	return <AvatarSettingsShell profile={profile} />;

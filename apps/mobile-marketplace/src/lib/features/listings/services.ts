@@ -39,8 +39,13 @@ export async function searchListingsPublic(
 
 	const page = Math.min(Math.max(params.page ?? 1, 1), SEARCH_PAGE_MAX);
 	const limit = Math.min(Math.max(params.limit ?? SEARCH_LIMIT_DEFAULT, 1), SEARCH_LIMIT_MAX);
-	const offset = (page - 1) * limit;
+	const offset =
+		params.offset !== undefined
+			? Math.min(Math.max(params.offset, 0), 100_000)
+			: (page - 1) * limit;
 	const to = offset + limit - 1;
+
+	const categoryIds = params.category_ids?.filter(Boolean) ?? [];
 
 	let q = supabase
 		.from("listings")
@@ -51,11 +56,28 @@ export async function searchListingsPublic(
 	const platform = params.platform ?? "mobile";
 	q = q.eq("platform", platform);
 
-	if (params.category_id) {
+	if (categoryIds.length > 0) {
+		q = q.in("category_id", categoryIds);
+	} else if (params.category_id) {
 		q = q.eq("category_id", params.category_id);
 	}
 	if (params.model_id) {
 		q = q.eq("model_id", params.model_id);
+	}
+	if (params.condition) {
+		q = q.eq("condition", params.condition);
+	}
+	if (params.sale_type) {
+		if (params.sale_type === "fixed") {
+			q = q.in("sale_type", ["fixed", "both"]);
+		} else if (params.sale_type === "auction") {
+			q = q.in("sale_type", ["auction", "both"]);
+		} else {
+			q = q.eq("sale_type", "both");
+		}
+	}
+	if (params.is_negotiable !== undefined) {
+		q = q.eq("is_negotiable", params.is_negotiable);
 	}
 	if (params.city) {
 		q = q.ilike("city", `%${escapeIlike(params.city.trim())}%`);
@@ -75,7 +97,15 @@ export async function searchListingsPublic(
 		q = q.ilike("title", pat);
 	}
 
-	const { data, error, count } = await q.order("created_at", { ascending: false }).range(offset, to);
+	if (params.sort === "price_low") {
+		q = q.order("price", { ascending: true }).order("created_at", { ascending: false });
+	} else if (params.sort === "price_high") {
+		q = q.order("price", { ascending: false }).order("created_at", { ascending: false });
+	} else {
+		q = q.order("created_at", { ascending: false });
+	}
+
+	const { data, error, count } = await q.range(offset, to);
 
 	const total = count ?? 0;
 	return {
@@ -218,6 +248,23 @@ export async function listSellerListings(
 		.is("deleted_at", null)
 		.order("updated_at", { ascending: false })
 		.limit(100);
+
+	return { data: (data as ListingRecord[] | null) ?? null, error };
+}
+
+export async function listPublicListingsBySellerId(
+	userId: string,
+	limit = 12,
+): Promise<{ data: ListingRecord[] | null; error: unknown }> {
+	const supabase = await createServerSupabaseClient();
+	const { data, error } = await supabase
+		.from("listings")
+		.select("*")
+		.eq("user_id", userId)
+		.eq("status", "active")
+		.is("deleted_at", null)
+		.order("updated_at", { ascending: false })
+		.limit(limit);
 
 	return { data: (data as ListingRecord[] | null) ?? null, error };
 }

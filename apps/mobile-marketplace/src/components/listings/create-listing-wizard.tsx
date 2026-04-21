@@ -4,21 +4,31 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import type { CategoryOption, CreateListingWizardInput } from "@/lib/features/listings";
-import { useCreateListing, usePublishListing, useUploadImages } from "@/lib/features/listings";
+import {
+	useCreateListing,
+	usePublishListing,
+	useUploadImages,
+} from "@/lib/features/listings";
+import { ImageDropzone } from "@/components/listings/image-dropzone";
 import { Button } from "@/components/primitives/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/primitives/card";
 import { Field, FieldLabel } from "@/components/primitives/field";
 import { Input } from "@/components/primitives/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/primitives/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/primitives/select";
 import { Textarea } from "@/components/primitives/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/primitives/card";
-
-import { ImageDropzone } from "@/components/listings/image-dropzone";
 
 type CreateListingWizardProps = {
 	categories: CategoryOption[];
 };
 
 const CONDITIONS = ["new", "like_new", "excellent", "good", "fair", "poor"] as const;
+const SALE_TYPES = ["fixed", "auction", "both"] as const;
 
 export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 	const router = useRouter();
@@ -26,7 +36,7 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 	const uploadImage = useUploadImages();
 	const publishListing = usePublishListing();
 
-	const [step, setStep] = useState<1 | 2 | 3>(1);
+	const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 	const [listingId, setListingId] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -36,7 +46,10 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 	const [description, setDescription] = useState("");
 	const [price, setPrice] = useState("");
 	const [city, setCity] = useState("");
+	const [area, setArea] = useState("");
 	const [condition, setCondition] = useState<(typeof CONDITIONS)[number]>("good");
+	const [saleType, setSaleType] = useState<(typeof SALE_TYPES)[number]>("fixed");
+	const [isNegotiable, setIsNegotiable] = useState(false);
 
 	async function submitBasics() {
 		setError(null);
@@ -48,13 +61,13 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 				model_id: null,
 				title: title.trim(),
 				description: description.trim() || null,
-				sale_type: "fixed",
+				sale_type: saleType,
 				price: Number(price),
-				is_negotiable: false,
+				is_negotiable: isNegotiable,
 				condition,
 				details: {},
 				city: city.trim(),
-				area: null,
+				area: area.trim() || null,
 			};
 			const row = await createListing(body);
 			setListingId(row.id);
@@ -105,13 +118,12 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 		<div container-id="create-listing-wizard" className="flex flex-col gap-6">
 			<ol
 				container-id="create-listing-wizard-steps"
-				className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+				className="grid gap-2 rounded-[1.6rem] border border-border/80 bg-card/75 p-4 text-sm text-muted-foreground sm:grid-cols-4"
 			>
-				<li className={step >= 1 ? "font-medium text-foreground" : ""}>1. Details</li>
-				<li aria-hidden>→</li>
-				<li className={step >= 2 ? "font-medium text-foreground" : ""}>2. Photos</li>
-				<li aria-hidden>→</li>
-				<li className={step >= 3 ? "font-medium text-foreground" : ""}>3. Publish</li>
+				<li className={step >= 1 ? "font-medium text-foreground" : ""}>1. Core details</li>
+				<li className={step >= 2 ? "font-medium text-foreground" : ""}>2. Pricing + location</li>
+				<li className={step >= 3 ? "font-medium text-foreground" : ""}>3. Photos</li>
+				<li className={step >= 4 ? "font-medium text-foreground" : ""}>4. Review + publish</li>
 			</ol>
 
 			{error ? (
@@ -124,19 +136,14 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 			) : null}
 
 			{step === 1 ? (
-				<Card size="sm">
+				<Card size="sm" className="surface-panel rounded-[1.8rem] border border-border/80 bg-card/90">
 					<CardHeader>
-						<CardTitle className="text-base">Listing details</CardTitle>
+						<CardTitle className="text-base">Core details</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-5">
 						<Field>
 							<FieldLabel>Category</FieldLabel>
-							<Select
-								value={categoryId}
-								onValueChange={(v) => {
-									if (v) setCategoryId(v);
-								}}
-							>
+							<Select value={categoryId} onValueChange={(v) => v && setCategoryId(v)}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Category" />
 								</SelectTrigger>
@@ -150,8 +157,13 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 							</Select>
 						</Field>
 						<Field>
-							<FieldLabel htmlFor="lst-title">Title</FieldLabel>
-							<Input id="lst-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+							<FieldLabel htmlFor="lst-title">Listing title</FieldLabel>
+							<Input
+								id="lst-title"
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="e.g. iPhone 13 PTA approved, 128GB"
+							/>
 						</Field>
 						<Field>
 							<FieldLabel htmlFor="lst-desc">Description</FieldLabel>
@@ -159,9 +171,40 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 								id="lst-desc"
 								value={description}
 								onChange={(e) => setDescription(e.target.value)}
-								rows={4}
+								rows={5}
+								placeholder="Mention battery health, accessories, faults, and PTA status."
 							/>
 						</Field>
+						<Field>
+							<FieldLabel>Condition</FieldLabel>
+							<Select value={condition} onValueChange={(v) => v && setCondition(v as (typeof CONDITIONS)[number])}>
+								<SelectTrigger className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{CONDITIONS.map((item) => (
+										<SelectItem key={item} value={item}>
+											{item.replaceAll("_", " ")}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</Field>
+						<div className="flex justify-end">
+							<Button type="button" disabled={busy} onClick={() => setStep(2)}>
+								Continue
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			) : null}
+
+			{step === 2 ? (
+				<Card size="sm" className="surface-panel rounded-[1.8rem] border border-border/80 bg-card/90">
+					<CardHeader>
+						<CardTitle className="text-base">Pricing and location</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-5">
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<Field>
 								<FieldLabel htmlFor="lst-price">Price</FieldLabel>
@@ -170,58 +213,57 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 									inputMode="decimal"
 									value={price}
 									onChange={(e) => setPrice(e.target.value)}
+									placeholder="95000"
 								/>
 							</Field>
 							<Field>
-								<FieldLabel htmlFor="lst-city">City</FieldLabel>
-								<Input id="lst-city" value={city} onChange={(e) => setCity(e.target.value)} />
+								<FieldLabel>Sale type</FieldLabel>
+								<Select value={saleType} onValueChange={(v) => v && setSaleType(v as (typeof SALE_TYPES)[number])}>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="fixed">Fixed price</SelectItem>
+										<SelectItem value="auction">Auction</SelectItem>
+										<SelectItem value="both">Fixed + auction</SelectItem>
+									</SelectContent>
+								</Select>
 							</Field>
 						</div>
-						<Field>
-							<FieldLabel>Condition</FieldLabel>
-							<Select
-								value={condition}
-								onValueChange={(v) => {
-									if (v) setCondition(v as (typeof CONDITIONS)[number]);
-								}}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{CONDITIONS.map((c) => (
-										<SelectItem key={c} value={c}>
-											{c}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</Field>
-						<Button
-							type="button"
-							className="w-full sm:w-fit sm:self-end"
-							disabled={busy}
-							onClick={() => void submitBasics()}
-						>
-							Continue
-						</Button>
-					</CardContent>
-				</Card>
-			) : null}
-
-			{step === 2 && listingId ? (
-				<Card size="sm">
-					<CardHeader>
-						<CardTitle className="text-base">Photos</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-col gap-5">
-						<ImageDropzone onFile={onUpload} disabled={busy} />
-						<div className="flex flex-wrap justify-end gap-2">
-							<Button type="button" variant="outline" onClick={() => setStep(3)} disabled={busy}>
-								Skip for now
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+							<Field>
+								<FieldLabel htmlFor="lst-city">City</FieldLabel>
+								<Input
+									id="lst-city"
+									value={city}
+									onChange={(e) => setCity(e.target.value)}
+									placeholder="Karachi"
+								/>
+							</Field>
+							<Field>
+								<FieldLabel htmlFor="lst-area">Area</FieldLabel>
+								<Input
+									id="lst-area"
+									value={area}
+									onChange={(e) => setArea(e.target.value)}
+									placeholder="Gulshan"
+								/>
+							</Field>
+						</div>
+						<label className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-foreground">
+							<input
+								type="checkbox"
+								checked={isNegotiable}
+								onChange={(e) => setIsNegotiable(e.target.checked)}
+							/>
+							<span>Allow negotiation on this listing</span>
+						</label>
+						<div className="flex justify-between gap-3">
+							<Button type="button" variant="outline" onClick={() => setStep(1)}>
+								Back
 							</Button>
-							<Button type="button" onClick={() => setStep(3)} disabled={busy}>
-								Continue
+							<Button type="button" disabled={busy} onClick={() => void submitBasics()}>
+								Create draft
 							</Button>
 						</div>
 					</CardContent>
@@ -229,23 +271,48 @@ export function CreateListingWizard({ categories }: CreateListingWizardProps) {
 			) : null}
 
 			{step === 3 && listingId ? (
-				<Card size="sm">
+				<Card size="sm" className="surface-panel rounded-[1.8rem] border border-border/80 bg-card/90">
 					<CardHeader>
-						<CardTitle className="text-base">Publish</CardTitle>
+						<CardTitle className="text-base">Photos</CardTitle>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-5">
+						<ImageDropzone onFile={onUpload} disabled={busy} />
 						<p className="text-sm text-muted-foreground">
-							Publish your listing to make it visible to buyers. You can edit it later from My
-							Listings.
+							Add clean front, back, sides, and any faults so buyers trust the listing.
 						</p>
-						<Button
-							type="button"
-							className="w-full sm:w-fit sm:self-end"
-							disabled={busy}
-							onClick={() => void onPublish()}
-						>
-							Publish listing
-						</Button>
+						<div className="flex flex-wrap justify-between gap-2">
+							<Button type="button" variant="outline" onClick={() => setStep(2)} disabled={busy}>
+								Back
+							</Button>
+							<Button type="button" onClick={() => setStep(4)} disabled={busy}>
+								Continue to review
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			) : null}
+
+			{step === 4 && listingId ? (
+				<Card size="sm" className="surface-panel rounded-[1.8rem] border border-border/80 bg-card/90">
+					<CardHeader>
+						<CardTitle className="text-base">Review and publish</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-5">
+						<div className="grid gap-3 rounded-2xl border border-border/70 bg-background/70 p-4 text-sm">
+							<p><span className="font-medium">Title:</span> {title}</p>
+							<p><span className="font-medium">Price:</span> Rs. {Number(price || 0).toLocaleString("en-PK")}</p>
+							<p><span className="font-medium">Location:</span> {city}{area ? `, ${area}` : ""}</p>
+							<p><span className="font-medium">Sale type:</span> {saleType}</p>
+							<p><span className="font-medium">Negotiable:</span> {isNegotiable ? "Yes" : "No"}</p>
+						</div>
+						<div className="flex flex-wrap justify-between gap-2">
+							<Button type="button" variant="outline" onClick={() => setStep(3)} disabled={busy}>
+								Back
+							</Button>
+							<Button type="button" disabled={busy} onClick={() => void onPublish()}>
+								Publish listing
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			) : null}

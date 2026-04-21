@@ -210,3 +210,39 @@ export function usePublishListing() {
 		[authFetch],
 	);
 }
+
+export function useBuyNow() {
+	const authFetch = useAuthenticatedFetch();
+
+	return useCallback(
+		async (listingId: string) => {
+			const result = await authFetch<{ ok: true; data: { order_id: string } } | { ok: false; error: string }>(
+				`/api/listings/${encodeURIComponent(listingId)}/buy-now`,
+				{ method: "POST" },
+			);
+			if ("ok" in result && result.ok) return result.data;
+			throw new Error("ok" in result && !result.ok ? result.error : "Failed to start purchase");
+		},
+		[authFetch],
+	);
+}
+
+export function usePlaceBid() {
+	const authFetch = useAuthenticatedFetch();
+
+	return useCallback(
+		async (listingId: string, amount: number) => {
+			const result = await authFetch<{ ok: true; data: unknown } | { ok: false; error: string }>(
+				`/api/listings/${encodeURIComponent(listingId)}/bids`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ amount }),
+				},
+			);
+			if ("ok" in result && result.ok) return result.data;
+			throw new Error("ok" in result && !result.ok ? result.error : "Failed to place bid");
+		},
+		[authFetch],
+	);
+}

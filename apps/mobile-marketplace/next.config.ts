@@ -10,9 +10,6 @@ const appRoot =
 /** npm workspaces run with cwd at repo root — load this app’s `.env*` so `NEXT_PUBLIC_*` are set. */
 loadEnvConfig(appRoot, process.env.NODE_ENV !== "production", undefined, true);
 
-/** npm workspace root (repo root) — so Turbopack resolves `next` from hoisted `node_modules`. */
-const workspaceRoot = path.resolve(appRoot, "../..");
-
 const nextConfig: NextConfig = {
 	allowedDevOrigins: ["127.0.0.1"],
 	images: {
@@ -20,9 +17,6 @@ const nextConfig: NextConfig = {
 			{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
 			{ protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
 		],
-	},
-	turbopack: {
-		root: workspaceRoot,
 	},
 };
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { listPublicListingsBySellerId, mapListingPrimaryImageUrls } from "@/lib/features/listings/services";
 import { fetchSellerPublicPagePayload } from "@/lib/features/reviews/services";
 
 import SellerPublicShell from "./shell";
@@ -20,5 +21,16 @@ export default async function SellerPublicPage({ params }: Props) {
 		notFound();
 	}
 
-	return <SellerPublicShell profile={payload.profile} reviewsInitial={payload.reviewsInitial} />;
+	const { data: listings } = await listPublicListingsBySellerId(id, 8);
+	const thumbs = await mapListingPrimaryImageUrls((listings ?? []).map((listing) => listing.id));
+	const imageByListingId = Object.fromEntries(thumbs) as Record<string, string>;
+
+	return (
+		<SellerPublicShell
+			imageByListingId={imageByListingId}
+			listings={listings ?? []}
+			profile={payload.profile}
+			reviewsInitial={payload.reviewsInitial}
+		/>
+	);
 }

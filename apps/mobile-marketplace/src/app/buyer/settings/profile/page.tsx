@@ -7,7 +7,7 @@ import ProfileSettingsShell from "./shell";
 export default async function BuyerProfileSettingsPage() {
 	const profile = await fetchMyProfile();
 	if (!profile) {
-		redirect("/login");
+		redirect("/sign-in");
 	}
 
 	return <ProfileSettingsShell profile={profile} />;
