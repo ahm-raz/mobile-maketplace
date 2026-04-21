@@ -27,8 +27,6 @@ test-results/
 *.vitest-temp/
 
 # Environment (do not commit secrets)
-.env
-.env.*
 !.env.example
 
 # Vercel / deploy
@@ -64,3 +62,4 @@ Thumbs.db
 
 # Optional local scratch files
 __tmp_*.json
+config.bat

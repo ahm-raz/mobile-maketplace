@@ -22,13 +22,13 @@ export default async function BuyerOrderReviewPage({ params }: Props) {
 		error: userError,
 	} = await supabase.auth.getUser();
 	if (userError || !user) {
-		redirect("/login");
+		redirect("/sign-in");
 	}
 
 	const orderResult = await fetchOrderDetailForReview(id);
 	if (!orderResult.ok) {
 		if (orderResult.reason === "no_session") {
-			redirect("/login");
+			redirect("/sign-in");
 		}
 		notFound();
 	}

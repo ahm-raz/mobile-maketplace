@@ -6,9 +6,9 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node init && next dev --turbopack",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.mts",
@@ -18,8 +18,8 @@
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "supabase:gen-types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "dev:mobile": "npm run dev -w mobile-marketplace -- -p 3001",
-    "build:mobile": "npm run build -w mobile-marketplace"
+    "dev:mobile": "node init && npm run dev -w mobile-marketplace -- -p 3001",
+    "build:mobile": "node init && npm run build -w mobile-marketplace"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.71",

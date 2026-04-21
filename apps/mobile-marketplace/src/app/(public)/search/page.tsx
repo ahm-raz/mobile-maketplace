@@ -1,6 +1,9 @@
 import SearchShell from "./shell";
 
-import { searchListingsPublic } from "@/lib/features/listings/services";
+import {
+	listMobileCategories,
+	searchListingsPublic,
+} from "@/lib/features/listings/services";
 import { listingsSearchParamsSchema } from "@/lib/features/listings";
 import type { ListingsSearchParams } from "@/lib/features/listings";
 
@@ -27,11 +30,20 @@ export default async function SearchPage({
 		: { platform: "mobile", page: 1, limit: 20 };
 
 	const { data: listings, pagination, error } = await searchListingsPublic(query);
+	const { data: categories, error: categoriesError } = await listMobileCategories();
 	if (error) {
 		throw new Error("Failed to search listings");
 	}
+	if (categoriesError) {
+		throw new Error("Failed to load categories");
+	}
 
 	return (
-		<SearchShell listings={listings ?? []} pagination={pagination} params={query} />
+		<SearchShell
+			categories={categories ?? []}
+			listings={listings ?? []}
+			pagination={pagination}
+			params={query}
+		/>
 	);
 }

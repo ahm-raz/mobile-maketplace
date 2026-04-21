@@ -36,7 +36,7 @@ export default function AvatarSettingsShell({ profile }: { profile: OwnProfile }
 			toast.success("Avatar updated");
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 401) {
-				router.push("/login");
+				router.push("/sign-in");
 				return;
 			}
 			const msg = e instanceof Error ? e.message : "Upload failed";
@@ -57,7 +57,7 @@ export default function AvatarSettingsShell({ profile }: { profile: OwnProfile }
 			</header>
 			<div
 				container-id="avatar-settings-row"
-				className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:gap-8 sm:p-8"
+				className="surface-panel flex flex-col items-center gap-6 rounded-[2rem] border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center sm:gap-8 sm:p-8"
 			>
 				<Avatar className="size-32 text-lg">
 					{profile.avatar_url ? <AvatarImage alt="" src={profile.avatar_url} /> : null}
@@ -82,7 +82,7 @@ export default function AvatarSettingsShell({ profile }: { profile: OwnProfile }
 						variant="outline"
 						onClick={() => inputRef.current?.click()}
 					>
-						{busy ? "Uploading…" : "Choose image"}
+						{busy ? "Uploading..." : "Choose image"}
 					</Button>
 					<p className="text-xs text-muted-foreground">
 						JPEG, PNG, WebP, or GIF. Max size per API limits.

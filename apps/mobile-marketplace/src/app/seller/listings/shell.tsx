@@ -11,16 +11,24 @@ type SellerListingsShellProps = {
 	listings: ListingRecord[];
 };
 
+const groups = [
+	{ key: "active", title: "Active listings" },
+	{ key: "draft", title: "Drafts" },
+	{ key: "sold", title: "Sold" },
+] as const;
+
 export default function SellerListingsShell({ listings }: SellerListingsShellProps) {
 	return (
 		<div container-id="seller-listings-shell" className="flex flex-col gap-8">
 			<header
 				container-id="seller-listings-header"
-				className="flex flex-wrap items-end justify-between gap-3"
+				className="surface-panel flex flex-wrap items-end justify-between gap-3 rounded-[2rem] border border-border/80 bg-card/85 p-6"
 			>
 				<div className="flex flex-col gap-1">
 					<h1 className="text-3xl font-semibold tracking-tight">My listings</h1>
-					<p className="text-sm text-muted-foreground">Manage drafts and published phones.</p>
+					<p className="text-sm text-muted-foreground">
+						Manage drafts, active phones, and sold inventory from one place.
+					</p>
 				</div>
 				<Link href="/seller/listings/new" className={cn(buttonVariants())}>
 					New listing
@@ -44,25 +52,35 @@ export default function SellerListingsShell({ listings }: SellerListingsShellPro
 					</p>
 				</div>
 			) : (
-				<div
-					container-id="seller-listings-grid"
-					className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-				>
-					{listings.map((l) => (
-						<div key={l.id} className="flex flex-col gap-2">
-							<ListingCard listing={l} />
-							<Link
-								href={`/seller/listings/${l.id}/edit`}
-								className={cn(
-									buttonVariants({ variant: "outline", size: "sm" }),
-									"w-full",
-								)}
-							>
-								Edit
-							</Link>
-						</div>
-					))}
-				</div>
+				groups.map((group) => {
+					const items = listings.filter((listing) => listing.status === group.key);
+					if (!items.length) return null;
+
+					return (
+						<section key={group.key} className="flex flex-col gap-4">
+							<div className="flex items-center justify-between gap-3">
+								<h2 className="text-xl font-semibold tracking-tight">{group.title}</h2>
+								<p className="text-sm text-muted-foreground">{items.length} listing(s)</p>
+							</div>
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								{items.map((listing) => (
+									<div key={listing.id} className="flex flex-col gap-2">
+										<ListingCard listing={listing} />
+										<Link
+											href={`/seller/listings/${listing.id}/edit`}
+											className={cn(
+												buttonVariants({ variant: "outline", size: "sm" }),
+												"w-full",
+											)}
+										>
+											Edit
+										</Link>
+									</div>
+								))}
+							</div>
+						</section>
+					);
+				})
 			)}
 		</div>
 	);
